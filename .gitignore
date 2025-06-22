@@ -1,0 +1,53 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+artifacts/
+
+# Rider and VS Code settings
+.idea/
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# ASP.NET-related
+project.lock.json
+project.fragment.lock.json
+project.json
+ScaffoldingReadMe.txt
+
+# Log and cache files
+*.log
+*.tmp
+*.bak
+*.backup
+
+# OS-specific
+Thumbs.db
+ehthumbs.db
+.DS_Store
+
+# ReSharper and extensions
+_ReSharper*/
+*.DotSettings.user
+
+# Solution-specific
+litee-server.sln.docstates
+
+# appsettings files
+Litee.Api/appsettings.Development.json
+Litee.Api/appsettings.json
+
+# Include the solution but ignore unnecessary files inside sub-projects
+Litee.Api/[Bb]in/
+Litee.Api/[Oo]bj/
+Litee.Domain/[Bb]in/
+Litee.Domain/[Oo]bj/
+Litee.Contracts/[Bb]in/
+Litee.Contracts/[Oo]bj/
+Litee.Application/[Bb]in/
+Litee.Application/[Oo]bj/

@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Litee.Api", "Litee.Api.csproj", "{FBE95C15-F135-B637-BD89-F651518BB11B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FBE95C15-F135-B637-BD89-F651518BB11B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBE95C15-F135-B637-BD89-F651518BB11B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBE95C15-F135-B637-BD89-F651518BB11B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBE95C15-F135-B637-BD89-F651518BB11B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C017DD6D-D06E-4B6B-BB34-F7709AD0BAD9}
+	EndGlobalSection
+EndGlobal
