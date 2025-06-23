@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Litee.Application.Services.Authentication;
 using Litee.Contracts.Authentication.SignIn;
 using Litee.Contracts.Authentication.SignUp;
@@ -15,15 +16,29 @@ public class AuthenticationController(IAuthenticationService authenticationServi
     [HttpGet(Routes.Authentication.GetAuthenticatedUser)]
     public IActionResult GetAuthenticatedUser()
     {
-        var token = HttpContext.Request.Cookies["access_token"];
-        if (string.IsNullOrEmpty(token))
-            return Unauthorized("The token is missing");
+        // var token = HttpContext.Request.Cookies["access_token"];
+        // if (string.IsNullOrEmpty(token))
+        //     return Unauthorized("The token is missing");
 
-        var result = _authenticationService.GetUserFromToken(token);
-        if (result.Data is null)
-            return Unauthorized("Invalid token");
+        // var result = _authenticationService.GetUserFromToken(token);
+        // if (result.Data is null)
+        //     return Unauthorized("Invalid token");
 
-        return Ok(result.Data);
+        // return Ok(result.Data);
+
+        // * User from context.Token
+        var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.FindFirst(ClaimTypes.Name)?.Value;
+        var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        return Ok(new
+        {
+            Id = id,
+            Username = username,
+            Role = role,
+            Email = email
+        });
     }
 
     [HttpPost(Routes.Authentication.SignUp)]

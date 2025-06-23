@@ -11,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddDatabase(configuration);
 builder.Services.AddJwtAuthentication(configuration);
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddApplication();
 
 var app = builder.Build();

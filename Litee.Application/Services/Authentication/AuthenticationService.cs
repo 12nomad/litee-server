@@ -95,12 +95,12 @@ public class AuthenticationService(IConfiguration configuration, DatabaseContext
 
   public void SetCookieToken(string token, HttpContext httpContext)
   {
+    // ! FIXME: Change this when deploying
     httpContext.Response.Cookies.Append("access_token", token, new CookieOptions
     {
       HttpOnly = true,
       IsEssential = true,
       Secure = true,
-      // ! FIXME: Change this when deploying
       SameSite = SameSiteMode.Lax,
       Expires = DateTime.UtcNow.AddDays(_tokenExpirationDays)
     });
