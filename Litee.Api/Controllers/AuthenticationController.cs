@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Litee.Application.Services.Authentication;
+using Litee.Contracts.Authentication.Common;
 using Litee.Contracts.Authentication.SignIn;
 using Litee.Contracts.Authentication.SignUp;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,7 @@ public class AuthenticationController(IAuthenticationService authenticationServi
 
     [Authorize(Roles = "Admin, User")]
     [HttpGet(Routes.Authentication.GetAuthenticatedUser)]
-    public IActionResult GetAuthenticatedUser()
+    public ActionResult<AuthenticationResponse> GetAuthenticatedUser()
     {
         // var token = HttpContext.Request.Cookies["access_token"];
         // if (string.IsNullOrEmpty(token))
@@ -32,12 +33,12 @@ public class AuthenticationController(IAuthenticationService authenticationServi
         var email = User.FindFirst(ClaimTypes.Email)?.Value;
         var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
-        return Ok(new
+        return Ok(new AuthenticationResponse
         {
-            Id = id,
-            Username = username,
-            Role = role,
-            Email = email
+            Id = int.Parse(id!),
+            Username = username!,
+            Email = email!,
+            Role = role!
         });
     }
 

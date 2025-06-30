@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using Litee.Application.Enums;
@@ -22,11 +23,11 @@ public class AuthenticationService(IConfiguration configuration, DatabaseContext
   private readonly IConfiguration _configuration = configuration;
   private readonly int _tokenExpirationDays = 7;
 
-  public ServicesResult GetUserFromToken(string token)
+  public ServicesResult<AuthenticationResponse> GetUserFromToken(string token)
   {
     var data = new JwtSecurityTokenHandler().ReadJwtToken(token);
     var claims = data.Claims;
-    return new ServicesResult(true, null, null, new AuthenticationResponse
+    return new ServicesResult<AuthenticationResponse>(true, null, null, new AuthenticationResponse
     {
       Id = int.Parse(claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value!),
       Username = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value!,
@@ -35,7 +36,7 @@ public class AuthenticationService(IConfiguration configuration, DatabaseContext
     });
   }
 
-  public async Task<ServicesResult> SignUpAsync(SignUpRequest request)
+  public async Task<ServicesResult<string>> SignUpAsync(SignUpRequest request)
   {
     // if (request.Password != request.ConfirmPassword)
     //   return new ServicesResult(false, "400", "Passwords don't match", null);
@@ -43,7 +44,7 @@ public class AuthenticationService(IConfiguration configuration, DatabaseContext
     var user = await _dbContext.Users
       .FirstOrDefaultAsync(user => user.Email == request.Email);
     if (user is not null)
-      return new ServicesResult(false, "400", "This email address is already registered", null);
+      return new ServicesResult<string>(false, HttpStatusCode.BadRequest, "This email address is already registered", null);
 
     var newUser = new User();
     var hashedPassword = new PasswordHasher<User>().HashPassword(newUser, request.Password);
@@ -55,19 +56,19 @@ public class AuthenticationService(IConfiguration configuration, DatabaseContext
     await _dbContext.Users.AddAsync(newUser);
     await _dbContext.SaveChangesAsync();
     var token = GenerateJwtToken(newUser);
-    return new ServicesResult(true, null, null, token);
+    return new ServicesResult<string>(true, null, null, token);
   }
 
-  public async Task<ServicesResult> SignInAsync(SignInRequest request)
+  public async Task<ServicesResult<string>> SignInAsync(SignInRequest request)
   {
     var user = await _dbContext.Users
       .FirstOrDefaultAsync(user => user.Email == request.Email);
 
     if (user is null || new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password) == PasswordVerificationResult.Failed)
-      return new ServicesResult(false, "400", "Invalid credentials", null);
+      return new ServicesResult<string>(false, HttpStatusCode.BadRequest, "Invalid credentials", null);
 
     var token = GenerateJwtToken(user);
-    return new ServicesResult(true, null, null, token);
+    return new ServicesResult<string>(true, null, null, token);
   }
 
   public string GenerateJwtToken(User user)
@@ -101,7 +102,7 @@ public class AuthenticationService(IConfiguration configuration, DatabaseContext
       HttpOnly = true,
       IsEssential = true,
       Secure = true,
-      SameSite = SameSiteMode.Lax,
+      SameSite = SameSiteMode.None,
       Expires = DateTime.UtcNow.AddDays(_tokenExpirationDays)
     });
   }

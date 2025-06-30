@@ -1,8 +1,18 @@
+using System.Net;
+
 namespace Litee.Contracts.Common;
 
-public record ServicesResult(
+// public record ServicesResult(
+//     bool IsSuccess,
+//     string? ErrorCode = null,
+//     string? Message = null,
+//     object? Data = null
+// );
+
+public record ServicesResult<T>(
     bool IsSuccess,
-    string? ErrorCode = null,
+    HttpStatusCode? ErrorCode = null,
     string? Message = null,
-    object? Data = null
+    T? Data = default
 );
+

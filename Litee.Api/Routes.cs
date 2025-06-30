@@ -20,9 +20,20 @@ public class Routes
 
     public const string GetAll = AccountsBasePath;
     public const string GetOne = AccountsBasePath + "/{id}";
-    public const string Create = AccountsBasePath + "/create";
-    public const string Update = AccountsBasePath + "/update/{id}";
-    public const string Delete = AccountsBasePath + "/delete/{id}";
+    public const string Create = AccountsBasePath;
+    public const string Update = AccountsBasePath + "/{id}";
+    public const string Delete = AccountsBasePath + "/{id}";
+  }
+
+  public static class Transactions
+  {
+    private const string TransactionsBasePath = $"{BasePath}/transactions";
+
+    public const string GetAll = TransactionsBasePath;
+    public const string GetOne = TransactionsBasePath + "/{id}";
+    public const string Create = TransactionsBasePath;
+    public const string Update = TransactionsBasePath + "/{id}";
+    public const string Delete = TransactionsBasePath + "/{id}";
   }
 }
 

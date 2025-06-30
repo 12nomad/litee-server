@@ -7,6 +7,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
 {
   public DbSet<User> Users { get; set; }
   public DbSet<Account> Accounts { get; set; }
+  public DbSet<Transaction> Transactions { get; set; }
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {

@@ -16,7 +16,6 @@ public static class CollectionExtensions
           .AllowAnyMethod()
           .AllowAnyHeader()
           .AllowCredentials()
-          .WithExposedHeaders("access_token")
       );
     });
     return services;
