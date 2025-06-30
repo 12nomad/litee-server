@@ -4,6 +4,8 @@ using Litee.Application.Services.Accounts;
 using Litee.Contracts.Accounts;
 using System.Net;
 using Litee.Domain.Entities;
+using Litee.Contracts.Transactions;
+using Litee.Contracts.Authentication.Common;
 
 namespace Litee.Api.Controllers;
 
@@ -22,14 +24,20 @@ public class AccountController(IAccountService accountService) : ControllerBase
 
   [Authorize(Roles = "Admin, User")]
   [HttpGet(Routes.Accounts.GetOne)]
-  public async Task<ActionResult<Account>> GetAccount([FromRoute] int id)
+  public async Task<ActionResult<PaginationResponse<Account>>> GetAccount([FromRoute] int id, [FromQuery] TransactionsPaginationAndFilteringRequest request)
   {
-    var result = await _accountService.GetAccountAsync(id);
+    var result = await _accountService.GetAccountAsync(id, request);
 
     if (!result.IsSuccess)
       return NotFound(result.Message);
 
-    return Ok(result.Data);
+    return Ok(new PaginationResponse<Account>()
+    {
+      CurrentPage = request.Page,
+      PageSize = request.PageSize,
+      TotalCount = result.Count,
+      Data = result.Data
+    });
   }
 
   [Authorize(Roles = "Admin, User")]
