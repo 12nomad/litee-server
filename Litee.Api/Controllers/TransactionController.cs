@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Litee.Api.Controllers;
 
 [ApiController]
-public class TransactionController(TransactionService _transactionService) : ControllerBase
+public class TransactionController(ITransactionService _transactionService) : ControllerBase
 {
   [Authorize(Roles = "Admin, User")]
   [HttpGet(Routes.Transactions.GetAll)]
@@ -22,5 +22,40 @@ public class TransactionController(TransactionService _transactionService) : Con
       TotalCount = result.Count,
       Data = result.Data
     });
+  }
+
+  [Authorize(Roles = "Admin, User")]
+  [HttpPost(Routes.Transactions.BulkDelete)]
+  public async Task<IActionResult> BulkDeleteTransactions([FromBody] BulkDeleteTransactionRequest request)
+  {
+    if (request.TransactionIds is null || !request.TransactionIds.Any())
+      return BadRequest("No transaction IDs provided");
+    try
+    {
+
+      var result = await _transactionService.BulkDeleteAsync(request);
+
+      if (!result.IsSuccess)
+        return BadRequest(result.Message);
+
+      return Ok();
+    }
+    catch (Exception e)
+    {
+
+      throw new Exception(e.Message);
+    }
+  }
+
+  [Authorize(Roles = "Admin, User")]
+  [HttpDelete(Routes.Transactions.Delete)]
+  public async Task<IActionResult> DeleteTransaction([FromRoute] int id)
+  {
+    var result = await _transactionService.DeleteTransactionAsync(id);
+
+    if (!result.IsSuccess)
+      return NotFound(result.Message);
+
+    return Ok();
   }
 }

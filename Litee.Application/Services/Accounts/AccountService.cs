@@ -6,6 +6,7 @@ using Litee.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using Litee.Contracts.Transactions;
 
 namespace Litee.Application.Services.Accounts;
 
@@ -25,15 +26,28 @@ public class AccountService(IHttpContextAccessor httpContextAccessor, DatabaseCo
     return new ServicesResult<List<Account>>(true, null, null, accounts);
   }
 
-  public async Task<ServicesResult<Account>> GetAccountAsync(int id)
+  public async Task<PaginatedServicesResult<Account>> GetAccountAsync(int id, TransactionsPaginationAndFilteringRequest request)
   {
     var UserId = GetUserId();
-    var account = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == id && a.UserId == UserId);
+    var account = await _dbContext.Accounts
+    .Where(a => a.Id == id && a.UserId == UserId)
+    .Select(a => new Account()
+    {
+      Id = a.Id,
+      Name = a.Name,
+      Transactions = a.Transactions
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToList(),
+      UserId = a.UserId,
+    })
+    .FirstOrDefaultAsync();
 
     if (account is null)
-      return new ServicesResult<Account>(false, HttpStatusCode.NotFound, "Account not found", null);
+      return new PaginatedServicesResult<Account>(false, HttpStatusCode.NotFound, "Account not found", null, 0);
 
-    return new ServicesResult<Account>(true, null, null, account);
+    var transactionsCount = await _dbContext.Transactions.Where(t => t.AccountId == id && t.UserId == UserId).CountAsync();
+    return new PaginatedServicesResult<Account>(true, null, null, account, transactionsCount);
   }
 
   public async Task<ServicesResult<Account>> CreateAccountAsync(CreateAccountRequest request)

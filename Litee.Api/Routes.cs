@@ -34,6 +34,7 @@ public class Routes
     public const string Create = TransactionsBasePath;
     public const string Update = TransactionsBasePath + "/{id}";
     public const string Delete = TransactionsBasePath + "/{id}";
+    public const string BulkDelete = TransactionsBasePath + "/bulk-delete";
   }
 }
 

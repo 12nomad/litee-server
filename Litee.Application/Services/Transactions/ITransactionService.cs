@@ -1,3 +1,4 @@
+using Litee.Contracts.Authentication.Common;
 using Litee.Contracts.Common;
 using Litee.Contracts.Transactions;
 using Litee.Domain.Entities;
@@ -6,7 +7,9 @@ namespace Litee.Application.Services.Transactions;
 
 public interface ITransactionService
 {
-  Task<ServicesResult<List<Transaction>>> GetTransactionsAsync();
+  Task<PaginatedServicesResult<List<Transaction>>> GetTransactionsAsync(TransactionsPaginationAndFilteringRequest request);
   Task<ServicesResult<Transaction>> GetTransactionAsync(int id);
-  Task<ServicesResult<Transaction>> CreateTransactionAsync(CreateTransactionRequest transaction);
+  Task<ServicesResult<Transaction>> CreateTransactionAsync(CreateTransactionRequest request);
+  Task<ServicesResult<Transaction>> DeleteTransactionAsync(int id);
+  Task<ServicesResult<Transaction>> BulkDeleteAsync(BulkDeleteTransactionRequest request);
 }
