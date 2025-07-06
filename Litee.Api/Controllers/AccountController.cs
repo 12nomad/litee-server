@@ -53,10 +53,10 @@ public class AccountController(IAccountService accountService) : ControllerBase
   }
 
   [Authorize(Roles = "Admin, User")]
-  [HttpPost(Routes.Accounts.Update)]
-  public async Task<ActionResult<Account>> UpdateAccount([FromBody] UpdateAccountRequest request)
+  [HttpPut(Routes.Accounts.Update)]
+  public async Task<ActionResult<Account>> UpdateAccount([FromRoute] int id, [FromBody] UpdateAccountRequest request)
   {
-    var result = await _accountService.UpdateAccountAsync(request);
+    var result = await _accountService.UpdateAccountAsync(id, request);
 
     if (!result.IsSuccess)
     {
@@ -69,7 +69,7 @@ public class AccountController(IAccountService accountService) : ControllerBase
   }
 
   [Authorize(Roles = "Admin, User")]
-  [HttpPost(Routes.Accounts.Delete)]
+  [HttpDelete(Routes.Accounts.Delete)]
   public async Task<ActionResult<Account>> DeleteAccount([FromRoute] int id)
   {
     var result = await _accountService.DeleteAccountAsync(id);

@@ -69,10 +69,10 @@ public class AccountService(IHttpContextAccessor httpContextAccessor, DatabaseCo
     return new ServicesResult<Account>(true, null, null, newAccount);
   }
 
-  public async Task<ServicesResult<Account>> UpdateAccountAsync(UpdateAccountRequest request)
+  public async Task<ServicesResult<Account>> UpdateAccountAsync(int id, UpdateAccountRequest request)
   {
     var UserId = GetUserId();
-    var account = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == request.Id && a.UserId == UserId);
+    var account = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == id && a.UserId == UserId);
 
     if (account is null)
       return new ServicesResult<Account>(false, HttpStatusCode.NotFound, "Account not found", null);
