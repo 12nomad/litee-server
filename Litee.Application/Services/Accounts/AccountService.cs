@@ -53,7 +53,7 @@ public class AccountService(IHttpContextAccessor httpContextAccessor, DatabaseCo
   public async Task<ServicesResult<Account>> CreateAccountAsync(CreateAccountRequest request)
   {
     var UserId = GetUserId();
-    var account = _dbContext.Accounts.FirstOrDefault(a => a.Name.ToLower() == request.Name.ToLower() && a.UserId == UserId);
+    var account = _dbContext.Accounts.FirstOrDefault(a => a.UserId == UserId && a.Name.ToLower() == request.Name.ToLower());
 
     if (account is not null)
       return new ServicesResult<Account>(false, HttpStatusCode.BadRequest, "Account with this name already exists", null);
@@ -79,7 +79,7 @@ public class AccountService(IHttpContextAccessor httpContextAccessor, DatabaseCo
 
     if (account.Name.ToLower() != request.Name.ToLower())
     {
-      var existingAccount = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Name.ToLower() == request.Name.ToLower() && a.UserId == UserId);
+      var existingAccount = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.UserId == UserId && a.Name.ToLower() == request.Name.ToLower());
       if (existingAccount is not null)
         return new ServicesResult<Account>(false, HttpStatusCode.BadRequest, "Account with this name already exists", null);
     }

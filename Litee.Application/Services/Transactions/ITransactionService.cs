@@ -10,6 +10,7 @@ public interface ITransactionService
   Task<PaginatedServicesResult<List<Transaction>>> GetTransactionsAsync(TransactionsPaginationAndFilteringRequest request);
   Task<ServicesResult<Transaction>> GetTransactionAsync(int id);
   Task<ServicesResult<Transaction>> CreateTransactionAsync(CreateTransactionRequest request);
+  Task<ServicesResult<Transaction>> UpdateTransactionAsync(int id, CreateTransactionRequest request);
   Task<ServicesResult<Transaction>> DeleteTransactionAsync(int id);
   Task<ServicesResult<Transaction>> BulkDeleteAsync(BulkDeleteTransactionRequest request);
 }

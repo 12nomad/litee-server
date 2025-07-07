@@ -46,9 +46,46 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
   }
 
 
-  public Task<ServicesResult<Transaction>> CreateTransactionAsync(CreateTransactionRequest transaction)
+  public async Task<ServicesResult<Transaction>> CreateTransactionAsync(CreateTransactionRequest request)
   {
-    throw new NotImplementedException();
+    var UserId = GetUserId();
+    var transaction = _databaseContext.Transactions.FirstOrDefault(a => a.UserId == UserId && a.AccountId == request.AccountId && a.Description.ToLower() == request.Description.ToLower());
+
+    if (transaction is not null)
+      return new ServicesResult<Transaction>(false, HttpStatusCode.BadRequest, "Transaction with the same description already exists", null);
+
+    var newTransaction = new Transaction
+    {
+      Description = request.Description,
+      AccountId = request.AccountId,
+      Amount = request.Amount,
+      UserId = UserId ?? 0,
+    };
+
+    await _databaseContext.Transactions.AddAsync(newTransaction);
+    await _databaseContext.SaveChangesAsync();
+    return new ServicesResult<Transaction>(true, null, null, newTransaction);
+  }
+
+  public async Task<ServicesResult<Transaction>> UpdateTransactionAsync(int id, CreateTransactionRequest request)
+  {
+    var UserId = GetUserId();
+    var transaction = await _databaseContext.Transactions.FirstOrDefaultAsync(a => a.Id == id && a.UserId == UserId && a.AccountId == request.AccountId);
+
+    if (transaction is null)
+      return new ServicesResult<Transaction>(false, HttpStatusCode.NotFound, "Transaction not found", null);
+
+    if (transaction.Description.ToLower() != request.Description.ToLower())
+    {
+      var existingTransaction = await _databaseContext.Transactions.FirstOrDefaultAsync(a => a.UserId == UserId && a.AccountId == request.AccountId && a.Description.ToLower() == request.Description.ToLower());
+      if (existingTransaction is not null)
+        return new ServicesResult<Transaction>(false, HttpStatusCode.BadRequest, "Transaction with this description already exists", null);
+    }
+
+    transaction.Description = request.Description;
+    transaction.Amount = request.Amount;
+    await _databaseContext.SaveChangesAsync();
+    return new ServicesResult<Transaction>(true, null, null, transaction);
   }
 
   public async Task<ServicesResult<Transaction>> BulkDeleteAsync(BulkDeleteTransactionRequest request)
