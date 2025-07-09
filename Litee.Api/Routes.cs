@@ -36,5 +36,17 @@ public class Routes
     public const string Delete = TransactionsBasePath + "/{id}";
     public const string BulkDelete = TransactionsBasePath + "/bulk-delete";
   }
+
+  public static class Categories
+  {
+    private const string CategoriesBasePath = $"{BasePath}/categories";
+
+    public const string GetAll = CategoriesBasePath;
+    public const string GetOne = CategoriesBasePath + "/{id}";
+    public const string Create = CategoriesBasePath;
+    public const string Update = CategoriesBasePath + "/{id}";
+    public const string Delete = CategoriesBasePath + "/{id}";
+    public const string BulkDelete = CategoriesBasePath + "/bulk-delete";
+  }
 }
 

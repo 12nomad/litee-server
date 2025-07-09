@@ -24,19 +24,20 @@ public class AccountController(IAccountService accountService) : ControllerBase
 
   [Authorize(Roles = "Admin, User")]
   [HttpGet(Routes.Accounts.GetOne)]
-  public async Task<ActionResult<PaginationResponse<Account>>> GetAccount([FromRoute] int id, [FromQuery] TransactionsPaginationAndFilteringRequest request)
+  public async Task<ActionResult<PaginationResponse<List<Transaction>, Account>>> GetAccount([FromRoute] int id, [FromQuery] TransactionsPaginationAndFilteringRequest request)
   {
     var result = await _accountService.GetAccountAsync(id, request);
 
     if (!result.IsSuccess)
       return NotFound(result.Message);
 
-    return Ok(new PaginationResponse<Account>()
+    return Ok(new PaginationResponse<List<Transaction>, Account>()
     {
       CurrentPage = request.Page,
       PageSize = request.PageSize,
       TotalCount = result.Count,
-      Data = result.Data
+      Data = result.Data,
+      Extra = result.Extra
     });
   }
 

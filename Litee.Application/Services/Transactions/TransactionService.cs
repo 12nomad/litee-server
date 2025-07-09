@@ -15,7 +15,7 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
   private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
 
-  public async Task<PaginatedServicesResult<List<Transaction>>> GetTransactionsAsync(TransactionsPaginationAndFilteringRequest request)
+  public async Task<PaginatedServicesResult<List<Transaction>, EmptyMetadata>> GetTransactionsAsync(TransactionsPaginationAndFilteringRequest request)
   {
     var query = _databaseContext.Transactions
       .AsQueryable();
@@ -30,14 +30,38 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
     {
       "amount" => query.OrderBy(t => t.Amount),
       "amountDesc" => query.OrderByDescending(t => t.Amount),
-      _ => query.OrderByDescending(t => t.Id)
+      _ => query.OrderByDescending(t => t.Date)
     };
 
     // * Pagination
     var count = await query.CountAsync();
-    var transactions = await query.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+    var transactions = await query
+       .Select(t => new Transaction
+       {
+         Id = t.Id,
+         Description = t.Description,
+         Amount = t.Amount,
+         Payee = t.Payee,
+         Date = t.Date,
+         AccountId = t.AccountId,
+         UserId = t.UserId,
+         CategoryId = t.CategoryId,
+         Category = t.Category == null ? null : new Category
+         {
+           Id = t.Category.Id,
+           Name = t.Category.Name
+         },
+         Account = new Account()
+         {
+           Id = t.Account.Id,
+           Name = t.Account.Name
+         }
+       })
+      .Skip((request.Page - 1) * request.PageSize)
+      .Take(request.PageSize)
+      .ToListAsync();
 
-    return new PaginatedServicesResult<List<Transaction>>(true, null, null, transactions, count);
+    return new PaginatedServicesResult<List<Transaction>, EmptyMetadata>(true, null, null, transactions, count, null);
   }
 
   public Task<ServicesResult<Transaction>> GetTransactionAsync(int id)
@@ -48,8 +72,8 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
 
   public async Task<ServicesResult<Transaction>> CreateTransactionAsync(CreateTransactionRequest request)
   {
-    var UserId = GetUserId();
-    var transaction = _databaseContext.Transactions.FirstOrDefault(a => a.UserId == UserId && a.AccountId == request.AccountId && a.Description.ToLower() == request.Description.ToLower());
+    var userId = GetUserId();
+    var transaction = await _databaseContext.Transactions.FirstOrDefaultAsync(a => a.UserId == userId && a.AccountId == request.AccountId && a.Description.ToLower() == request.Description.ToLower());
 
     if (transaction is not null)
       return new ServicesResult<Transaction>(false, HttpStatusCode.BadRequest, "Transaction with the same description already exists", null);
@@ -57,9 +81,12 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
     var newTransaction = new Transaction
     {
       Description = request.Description,
-      AccountId = request.AccountId,
       Amount = request.Amount,
-      UserId = UserId ?? 0,
+      Payee = request.Payee,
+      Date = request.Date,
+      AccountId = request.AccountId,
+      UserId = userId ?? 0,
+      CategoryId = request.CategoryId
     };
 
     await _databaseContext.Transactions.AddAsync(newTransaction);
@@ -69,21 +96,25 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
 
   public async Task<ServicesResult<Transaction>> UpdateTransactionAsync(int id, CreateTransactionRequest request)
   {
-    var UserId = GetUserId();
-    var transaction = await _databaseContext.Transactions.FirstOrDefaultAsync(a => a.Id == id && a.UserId == UserId && a.AccountId == request.AccountId);
+    var userId = GetUserId();
+    var transaction = await _databaseContext.Transactions.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
     if (transaction is null)
       return new ServicesResult<Transaction>(false, HttpStatusCode.NotFound, "Transaction not found", null);
 
     if (transaction.Description.ToLower() != request.Description.ToLower())
     {
-      var existingTransaction = await _databaseContext.Transactions.FirstOrDefaultAsync(a => a.UserId == UserId && a.AccountId == request.AccountId && a.Description.ToLower() == request.Description.ToLower());
+      var existingTransaction = await _databaseContext.Transactions.FirstOrDefaultAsync(a => a.UserId == userId && a.AccountId == request.AccountId && a.Description.ToLower() == request.Description.ToLower());
       if (existingTransaction is not null)
         return new ServicesResult<Transaction>(false, HttpStatusCode.BadRequest, "Transaction with this description already exists", null);
     }
 
     transaction.Description = request.Description;
     transaction.Amount = request.Amount;
+    transaction.Payee = request.Payee;
+    transaction.Date = request.Date;
+    transaction.AccountId = request.AccountId;
+    transaction.CategoryId = request.CategoryId;
     await _databaseContext.SaveChangesAsync();
     return new ServicesResult<Transaction>(true, null, null, transaction);
   }
@@ -93,6 +124,26 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
     var userId = GetUserId();
     var transactions = await _databaseContext.Transactions
       .Where(t => request.TransactionIds!.Contains(t.Id) && t.UserId == userId)
+      .Select(t => new Transaction()
+      {
+        Id = t.Id,
+        Description = t.Description,
+        Amount = t.Amount,
+        Payee = t.Payee,
+        Date = t.Date,
+        AccountId = t.AccountId,
+        UserId = t.UserId,
+        Category = t.Category == null ? null : new Category
+        {
+          Id = t.Category.Id,
+          Name = t.Category.Name
+        },
+        Account = new Account
+        {
+          Id = t.Account.Id,
+          Name = t.Account.Name
+        }
+      })
       .ToListAsync();
 
     if (transactions.Count == 0)

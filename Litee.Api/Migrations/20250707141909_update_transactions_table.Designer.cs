@@ -3,6 +3,7 @@ using System;
 using Litee.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Litee.Api.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250707141909_update_transactions_table")]
+    partial class update_transactions_table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,29 +48,6 @@ namespace Litee.Api.Migrations
                     b.ToTable("Accounts");
                 });
 
-            modelBuilder.Entity("Litee.Domain.Entities.Category", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Categories");
-                });
-
             modelBuilder.Entity("Litee.Domain.Entities.Transaction", b =>
                 {
                     b.Property<int>("Id")
@@ -80,9 +60,6 @@ namespace Litee.Api.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("Amount")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("CategoryId")
                         .HasColumnType("integer");
 
                     b.Property<DateOnly>("Date")
@@ -103,8 +80,6 @@ namespace Litee.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AccountId");
-
-                    b.HasIndex("CategoryId");
 
                     b.HasIndex("UserId");
 
@@ -156,17 +131,6 @@ namespace Litee.Api.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Litee.Domain.Entities.Category", b =>
-                {
-                    b.HasOne("Litee.Domain.Entities.User", "User")
-                        .WithMany("Categories")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Litee.Domain.Entities.Transaction", b =>
                 {
                     b.HasOne("Litee.Domain.Entities.Account", "Account")
@@ -174,11 +138,6 @@ namespace Litee.Api.Migrations
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Litee.Domain.Entities.Category", "Category")
-                        .WithMany("Transactions")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Litee.Domain.Entities.User", "User")
                         .WithMany("Transactions")
@@ -188,8 +147,6 @@ namespace Litee.Api.Migrations
 
                     b.Navigation("Account");
 
-                    b.Navigation("Category");
-
                     b.Navigation("User");
                 });
 
@@ -198,16 +155,9 @@ namespace Litee.Api.Migrations
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("Litee.Domain.Entities.Category", b =>
-                {
-                    b.Navigation("Transactions");
-                });
-
             modelBuilder.Entity("Litee.Domain.Entities.User", b =>
                 {
                     b.Navigation("Accounts");
-
-                    b.Navigation("Categories");
 
                     b.Navigation("Transactions");
                 });

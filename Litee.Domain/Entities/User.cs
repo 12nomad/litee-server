@@ -21,4 +21,5 @@ public class User
   // navigation properties
   public ICollection<Account> Accounts { get; set; } = new List<Account>();
   public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+  public ICollection<Category> Categories { get; set; } = new List<Category>();
 }

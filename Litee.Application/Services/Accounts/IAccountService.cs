@@ -8,7 +8,7 @@ namespace Litee.Application.Services.Accounts;
 public interface IAccountService
 {
   Task<ServicesResult<List<Account>>> GetAccountsAsync();
-  Task<PaginatedServicesResult<Account>> GetAccountAsync(int id, TransactionsPaginationAndFilteringRequest request);
+  Task<PaginatedServicesResult<List<Transaction>, Account>> GetAccountAsync(int id, TransactionsPaginationAndFilteringRequest request);
   Task<ServicesResult<Account>> CreateAccountAsync(CreateAccountRequest account);
   Task<ServicesResult<Account>> UpdateAccountAsync(int id, UpdateAccountRequest request);
   Task<ServicesResult<Account>> DeleteAccountAsync(int id);

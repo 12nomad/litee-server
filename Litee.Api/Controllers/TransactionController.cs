@@ -1,5 +1,6 @@
 using Litee.Application.Services.Transactions;
 using Litee.Contracts.Authentication.Common;
+using Litee.Contracts.Common;
 using Litee.Contracts.Transactions;
 using Litee.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -12,15 +13,16 @@ public class TransactionController(ITransactionService _transactionService) : Co
 {
   [Authorize(Roles = "Admin, User")]
   [HttpGet(Routes.Transactions.GetAll)]
-  public async Task<ActionResult<PaginationResponse<List<Transaction>>>> GetAccounts([FromQuery] TransactionsPaginationAndFilteringRequest request)
+  public async Task<ActionResult<PaginationResponse<List<Transaction>, EmptyMetadata>>> GetAccounts([FromQuery] TransactionsPaginationAndFilteringRequest request)
   {
     var result = await _transactionService.GetTransactionsAsync(request);
-    return Ok(new PaginationResponse<List<Transaction>>()
+    return Ok(new PaginationResponse<List<Transaction>, EmptyMetadata>()
     {
       CurrentPage = request.Page,
       PageSize = request.PageSize,
       TotalCount = result.Count,
-      Data = result.Data
+      Data = result.Data,
+      Extra = null
     });
   }
 

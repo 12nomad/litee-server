@@ -9,11 +9,15 @@ public class Transaction
   [MaxLength(100), MinLength(10)]
   public string Description { get; set; } = null!;
 
-  public decimal Amount { get; set; }
+  public string Payee { get; set; } = null!;
+  public int Amount { get; set; }
+  public DateOnly Date { get; set; }
 
   // navigation properties
   public int AccountId { get; set; }
   public Account Account { get; set; } = null!;
   public int UserId { get; set; }
   public User User { get; set; } = null!;
+  public int? CategoryId { get; set; }
+  public Category? Category { get; set; }
 }

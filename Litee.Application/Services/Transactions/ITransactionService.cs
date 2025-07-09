@@ -7,7 +7,7 @@ namespace Litee.Application.Services.Transactions;
 
 public interface ITransactionService
 {
-  Task<PaginatedServicesResult<List<Transaction>>> GetTransactionsAsync(TransactionsPaginationAndFilteringRequest request);
+  Task<PaginatedServicesResult<List<Transaction>, EmptyMetadata>> GetTransactionsAsync(TransactionsPaginationAndFilteringRequest request);
   Task<ServicesResult<Transaction>> GetTransactionAsync(int id);
   Task<ServicesResult<Transaction>> CreateTransactionAsync(CreateTransactionRequest request);
   Task<ServicesResult<Transaction>> UpdateTransactionAsync(int id, CreateTransactionRequest request);

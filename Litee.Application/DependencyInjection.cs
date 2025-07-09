@@ -1,5 +1,6 @@
 using Litee.Application.Services.Accounts;
 using Litee.Application.Services.Authentication;
+using Litee.Application.Services.Categories;
 using Litee.Application.Services.Transactions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +13,7 @@ public static class DependencyInjection
     services.AddScoped<IAuthenticationService, AuthenticationService>();
     services.AddScoped<IAccountService, AccountService>();
     services.AddScoped<ITransactionService, TransactionService>();
+    services.AddScoped<ICategoryService, CategoryService>();
     return services;
   }
 }

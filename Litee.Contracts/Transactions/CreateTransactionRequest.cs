@@ -9,8 +9,18 @@ public class CreateTransactionRequest
   public string Description { get; set; } = null!;
 
   [Required]
-  public decimal Amount { get; set; }
+  public int Amount { get; set; }
+
+
+  [Required]
+  public string Payee { get; set; } = null!;
+
+  [Required]
+  public DateOnly Date { get; set; }
 
   [Required]
   public int AccountId { get; set; }
+
+  [Required]
+  public int CategoryId { get; set; }
 }
