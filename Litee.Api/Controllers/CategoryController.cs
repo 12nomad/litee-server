@@ -1,3 +1,4 @@
+using System.Net;
 using Litee.Application.Services.Categories;
 using Litee.Contracts.Authentication.Common;
 using Litee.Contracts.Categories;
@@ -48,6 +49,22 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
 
     if (!result.IsSuccess)
       return BadRequest(result.Message);
+
+    return Ok(result.Data);
+  }
+
+  [Authorize(Roles = "Admin, User")]
+  [HttpPut(Routes.Categories.Update)]
+  public async Task<ActionResult<Category>> UpdateCategory([FromRoute] int id, [FromBody] UpdateCategoryRequest request)
+  {
+    var result = await _categoryService.UpdateCategoryAsync(id, request);
+
+    if (!result.IsSuccess)
+    {
+      if (result.ErrorCode == HttpStatusCode.NotFound)
+        return NotFound(result.Message);
+      return BadRequest(result.Message);
+    }
 
     return Ok(result.Data);
   }

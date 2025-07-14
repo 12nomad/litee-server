@@ -51,26 +51,33 @@ public class TransactionController(ITransactionService _transactionService) : Co
   }
 
   [Authorize(Roles = "Admin, User")]
+  [HttpPost(Routes.Transactions.BulkCreate)]
+  public async Task<IActionResult> BulkCreateTransactions([FromBody] BulkCreateTransactionRequest request)
+  {
+    if (request.Transactions is null || !request.Transactions.Any())
+      return BadRequest("No transaction provided");
+
+    var result = await _transactionService.BulkCreateAsync(request);
+
+    if (!result.IsSuccess)
+      return BadRequest(result.Message);
+
+    return Ok();
+  }
+
+  [Authorize(Roles = "Admin, User")]
   [HttpPost(Routes.Transactions.BulkDelete)]
   public async Task<IActionResult> BulkDeleteTransactions([FromBody] BulkDeleteTransactionRequest request)
   {
     if (request.TransactionIds is null || !request.TransactionIds.Any())
-      return BadRequest("No transaction IDs provided");
-    try
-    {
+      return BadRequest("No transaction ID provided");
 
-      var result = await _transactionService.BulkDeleteAsync(request);
+    var result = await _transactionService.BulkDeleteAsync(request);
 
-      if (!result.IsSuccess)
-        return BadRequest(result.Message);
+    if (!result.IsSuccess)
+      return BadRequest(result.Message);
 
-      return Ok();
-    }
-    catch (Exception e)
-    {
-
-      throw new Exception(e.Message);
-    }
+    return Ok();
   }
 
   [Authorize(Roles = "Admin, User")]

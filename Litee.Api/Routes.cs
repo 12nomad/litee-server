@@ -35,6 +35,8 @@ public class Routes
     public const string Update = TransactionsBasePath + "/{id}";
     public const string Delete = TransactionsBasePath + "/{id}";
     public const string BulkDelete = TransactionsBasePath + "/bulk-delete";
+    public const string BulkCreate = TransactionsBasePath + "/bulk-create";
+
   }
 
   public static class Categories
