@@ -12,5 +12,6 @@ public interface ITransactionService
   Task<ServicesResult<Transaction>> CreateTransactionAsync(CreateTransactionRequest request);
   Task<ServicesResult<Transaction>> UpdateTransactionAsync(int id, CreateTransactionRequest request);
   Task<ServicesResult<Transaction>> DeleteTransactionAsync(int id);
-  Task<ServicesResult<Transaction>> BulkDeleteAsync(BulkDeleteTransactionRequest request);
+  Task<ServicesResult<List<Transaction>>> BulkDeleteAsync(BulkDeleteTransactionRequest request);
+  Task<ServicesResult<List<Transaction>>> BulkCreateAsync(BulkCreateTransactionRequest request);
 }

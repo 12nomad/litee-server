@@ -95,6 +95,26 @@ public class CategoryService(IHttpContextAccessor httpContextAccessor, DatabaseC
     return new ServicesResult<Category>(true, null, null, newCategory);
   }
 
+  public async Task<ServicesResult<Category>> UpdateCategoryAsync(int id, UpdateCategoryRequest request)
+  {
+    var userId = GetUserId();
+    var category = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+
+    if (category is null)
+      return new ServicesResult<Category>(false, HttpStatusCode.NotFound, "Category not found", null);
+
+    if (category.Name.ToLower() != request.Name.ToLower())
+    {
+      var existingCategory = await _dbContext.Categories.FirstOrDefaultAsync(c => c.UserId == userId && c.Name.ToLower() == request.Name.ToLower());
+      if (existingCategory is not null)
+        return new ServicesResult<Category>(false, HttpStatusCode.BadRequest, "Category with this name already exists", null);
+    }
+
+    category.Name = request.Name;
+    await _dbContext.SaveChangesAsync();
+    return new ServicesResult<Category>(true, null, null, category);
+  }
+
   public async Task<ServicesResult<Category>> DeleteCategoryAsync(int id)
   {
     var userId = GetUserId();

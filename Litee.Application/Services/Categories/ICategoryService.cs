@@ -11,6 +11,6 @@ public interface ICategoryService
   Task<PaginatedServicesResult<List<Transaction>, Category>> GetCategoryAsync(int id, TransactionsPaginationAndFilteringRequest request);
 
   Task<ServicesResult<Category>> CreateCategoryAsync(CreateCategoryRequest category);
-  // Task<ServicesResult<Category>> UpdateCategoryAsync(int id, UpdateCategoryRequest request);
+  Task<ServicesResult<Category>> UpdateCategoryAsync(int id, UpdateCategoryRequest request);
   Task<ServicesResult<Category>> DeleteCategoryAsync(int id);
 }

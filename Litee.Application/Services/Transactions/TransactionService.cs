@@ -119,7 +119,26 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
     return new ServicesResult<Transaction>(true, null, null, transaction);
   }
 
-  public async Task<ServicesResult<Transaction>> BulkDeleteAsync(BulkDeleteTransactionRequest request)
+  public async Task<ServicesResult<List<Transaction>>> BulkCreateAsync(BulkCreateTransactionRequest request)
+  {
+    var userId = GetUserId();
+    var transactions = request.Transactions.Select(t => new Transaction
+    {
+      Description = t.Description,
+      Amount = t.Amount,
+      Payee = t.Payee,
+      Date = t.Date,
+      AccountId = t.AccountId,
+      UserId = userId ?? 0
+    }).ToList();
+
+    await _databaseContext.Transactions.AddRangeAsync(transactions);
+    await _databaseContext.SaveChangesAsync();
+
+    return new ServicesResult<List<Transaction>>(true, null, "Transactions created successfully", null);
+  }
+
+  public async Task<ServicesResult<List<Transaction>>> BulkDeleteAsync(BulkDeleteTransactionRequest request)
   {
     var userId = GetUserId();
     var transactions = await _databaseContext.Transactions
@@ -147,12 +166,12 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
       .ToListAsync();
 
     if (transactions.Count == 0)
-      return new ServicesResult<Transaction>(false, HttpStatusCode.NotFound, "No matching transactions found", null);
+      return new ServicesResult<List<Transaction>>(false, HttpStatusCode.NotFound, "No matching transactions found", null);
 
     _databaseContext.Transactions.RemoveRange(transactions);
     await _databaseContext.SaveChangesAsync();
 
-    return new ServicesResult<Transaction>(true, null, "Transactions deleted successfully", null);
+    return new ServicesResult<List<Transaction>>(true, null, "Transactions deleted successfully", null);
   }
 
   public async Task<ServicesResult<Transaction>> DeleteTransactionAsync(int id)
