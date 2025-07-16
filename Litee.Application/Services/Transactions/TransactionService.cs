@@ -122,15 +122,45 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
   public async Task<ServicesResult<List<Transaction>>> BulkCreateAsync(BulkCreateTransactionRequest request)
   {
     var userId = GetUserId();
-    var transactions = request.Transactions.Select(t => new Transaction
+
+    var invalidItems = new List<string>();
+
+    var transactions = new List<Transaction>();
+
+    foreach (var t in request.Transactions)
     {
-      Description = t.Description,
-      Amount = t.Amount,
-      Payee = t.Payee,
-      Date = t.Date,
-      AccountId = t.AccountId,
-      UserId = userId ?? 0
-    }).ToList();
+      if (!int.TryParse(t.Amount.ToString(), out var parsedAmount))
+      {
+        invalidItems.Add($"Invalid Amount for transaction: {t.Description}");
+        continue;
+      }
+
+      if (!DateOnly.TryParse(t.Date.ToString(), out var parsedDate))
+      {
+        invalidItems.Add($"Invalid Date format for transaction: {t.Date}");
+        continue;
+      }
+
+      transactions.Add(new Transaction
+      {
+        Amount = parsedAmount,
+        Date = parsedDate,
+        Description = t.Description,
+        Payee = t.Payee,
+        AccountId = t.AccountId,
+        UserId = userId ?? 0
+      });
+    }
+
+    if (invalidItems.Any())
+    {
+      return new ServicesResult<List<Transaction>>(
+          false,
+          null,
+          "Some transactions have errors. Please verify the data you provided before continuing",
+          null
+      );
+    }
 
     await _databaseContext.Transactions.AddRangeAsync(transactions);
     await _databaseContext.SaveChangesAsync();

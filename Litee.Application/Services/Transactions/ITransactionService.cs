@@ -1,4 +1,3 @@
-using Litee.Contracts.Authentication.Common;
 using Litee.Contracts.Common;
 using Litee.Contracts.Transactions;
 using Litee.Domain.Entities;

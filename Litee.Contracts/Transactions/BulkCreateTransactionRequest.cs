@@ -15,7 +15,6 @@ public class CreateTransaction
   [Required]
   public int Amount { get; set; }
 
-
   [Required]
   public string Payee { get; set; } = null!;
 
