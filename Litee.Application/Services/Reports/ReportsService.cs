@@ -1,4 +1,5 @@
 using System.Net;
+using System.Reflection.Metadata;
 using System.Security.Claims;
 using Litee.Contracts.Common;
 using Litee.Contracts.Reports;
@@ -12,6 +13,7 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
 {
   private readonly DatabaseContext _databaseContext = databaseContext;
   private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+  private const int DaysBeforeToday = 29; // * Today will be included * //
 
   public async Task<ServicesResult<FinanceResult>> GetReportsAsync(string? from, string? to, int accountId)
   {
@@ -21,7 +23,7 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
     if (!string.IsNullOrWhiteSpace(from) && DateOnly.TryParseExact(from, "yyyy-MM-dd", out var parsed))
       startDate = parsed;
     else
-      startDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-30);
+      startDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-DaysBeforeToday);
 
     DateOnly endDate;
     if (!string.IsNullOrWhiteSpace(to) && DateOnly.TryParseExact(to, "yyyy-MM-dd", out var anotherParse))
@@ -33,18 +35,13 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
       return new ServicesResult<FinanceResult>(false, HttpStatusCode.BadRequest, "Start date should not be greater than end date", null);
 
 
-    // * with 1 day offset
+    // * Includes today
     var periodLength = (endDate.ToDateTime(TimeOnly.MinValue)
-                   - startDate.ToDateTime(TimeOnly.MinValue)).Days;
+                   - startDate.ToDateTime(TimeOnly.MinValue)).Days + 1;
     var previousPeriodEnd = startDate.AddDays(-1);
-    var previousPeriodStart = previousPeriodEnd.AddDays(-periodLength);
+    var previousPeriodStart = previousPeriodEnd.AddDays(-periodLength + 1);
 
-    Console.WriteLine(startDate.ToString());
-    Console.WriteLine(endDate.ToShortDateString());
-    Console.WriteLine(previousPeriodStart.ToShortDateString());
-    Console.WriteLine(previousPeriodEnd.ToShortDateString());
-
-    // *
+    // * Current period summary
     var currentPeriodSummary = await _databaseContext.Transactions
     .Where(t =>
         t.Date >= startDate &&
@@ -62,7 +59,7 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
     .FirstOrDefaultAsync();
     // *
 
-    // *
+    // * Previous period summary
     var previousPeriodSummary = await _databaseContext.Transactions
     .Where(t =>
         t.Date >= previousPeriodStart &&
@@ -80,7 +77,7 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
     .FirstOrDefaultAsync();
     // *
 
-    // *
+    // * Expense per category
     var categoriesSummary = await _databaseContext.Transactions
     .Where(t =>
         t.Date >= startDate &&
@@ -100,13 +97,8 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
     .ToListAsync();
     // *
 
-
-    // *
-    var totalDays = (endDate.ToDateTime(TimeOnly.MinValue)
-                - startDate.ToDateTime(TimeOnly.MinValue)).Days;
-
-    // * with 1 day offset
-    var allDates = Enumerable.Range(0, totalDays + 1)
+    // * Income, expense, remain per day
+    var allDates = Enumerable.Range(0, periodLength)
         .Select(offset => startDate.AddDays(offset))
         .ToList();
 
@@ -165,6 +157,6 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
   public int GetDifference(int current, int previous)
   {
     if (previous == 0) return previous == current ? 0 : 100;
-    return (current - previous) / previous * 100;
+    return (int)(((double)(current - previous) / previous) * 100);
   }
 }
