@@ -13,9 +13,9 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
 {
   private readonly DatabaseContext _databaseContext = databaseContext;
   private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
-  private const int DaysBeforeToday = 29; // * Today will be included * //
+  private const int DaysBeforeToday = 29; // * Today included * //
 
-  public async Task<ServicesResult<FinanceResult>> GetReportsAsync(string? from, string? to, int accountId)
+  public async Task<ServicesResult<FinanceResult>> GetReportsAsync(string? from, string? to, int? accountId)
   {
     var userId = GetUserId();
 
@@ -47,7 +47,7 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
         t.Date >= startDate &&
         t.Date <= endDate &&
         t.UserId == userId &&
-        t.AccountId == accountId
+        (!accountId.HasValue || t.AccountId == accountId.Value)
     )
     .GroupBy(_ => 1)
     .Select(g => new FinanceSummary()
@@ -65,7 +65,7 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
         t.Date >= previousPeriodStart &&
         t.Date <= previousPeriodEnd &&
         t.UserId == userId &&
-        t.AccountId == accountId
+        (!accountId.HasValue || t.AccountId == accountId.Value)
     )
     .GroupBy(_ => 1)
     .Select(g => new FinanceSummary()
@@ -83,7 +83,7 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
         t.Date >= startDate &&
         t.Date <= endDate &&
         t.UserId == userId &&
-        t.AccountId == accountId &&
+        (!accountId.HasValue || t.AccountId == accountId.Value) &&
         t.Amount < 0
     )
     .Include(t => t.Category)
@@ -107,7 +107,7 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
             t.Date >= startDate &&
             t.Date <= endDate &&
             t.UserId == userId &&
-            t.AccountId == accountId
+            (!accountId.HasValue || t.AccountId == accountId.Value)
         )
         .GroupBy(t => t.Date)
         .Select(g => new FinanceSummary()
@@ -157,6 +157,6 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
   public int GetDifference(int current, int previous)
   {
     if (previous == 0) return previous == current ? 0 : 100;
-    return (int)(((double)(current - previous) / previous) * 100);
+    return (current - previous) / previous * 100;
   }
 }
