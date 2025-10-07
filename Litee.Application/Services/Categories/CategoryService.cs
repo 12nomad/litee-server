@@ -15,6 +15,7 @@ public class CategoryService(IHttpContextAccessor httpContextAccessor, DatabaseC
   private readonly DatabaseContext _dbContext = dbContext;
   private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
   private const int RetrievedCategoriesCount = 6;
+  private const int DaysBeforeToday = 29; // * Today included * //
 
 
   public async Task<ServicesResult<List<Category>>> GetCategoriesAsync()
@@ -28,6 +29,22 @@ public class CategoryService(IHttpContextAccessor httpContextAccessor, DatabaseC
   public async Task<PaginatedServicesResult<List<Transaction>, Category>> GetCategoryAsync(int id, TransactionsPaginationAndFilteringRequest request)
   {
     var userId = GetUserId();
+
+    DateOnly startDate;
+    if (!string.IsNullOrWhiteSpace(request.From) && DateOnly.TryParseExact(request.From, "yyyy-MM-dd", out var parsed))
+      startDate = parsed;
+    else
+      startDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-DaysBeforeToday);
+
+    DateOnly endDate;
+    if (!string.IsNullOrWhiteSpace(request.To) && DateOnly.TryParseExact(request.To, "yyyy-MM-dd", out var anotherParse))
+      endDate = anotherParse;
+    else
+      endDate = DateOnly.FromDateTime(DateTime.Today);
+
+    if (startDate > endDate)
+      return new PaginatedServicesResult<List<Transaction>, Category>(false, HttpStatusCode.BadRequest, "Start date should not be greater than end date", null);
+
     var category = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
 
     if (category is null)
@@ -35,10 +52,12 @@ public class CategoryService(IHttpContextAccessor httpContextAccessor, DatabaseC
 
     var query = _dbContext.Transactions.Where(t => t.CategoryId == id && t.UserId == userId).AsQueryable();
     // * Date Filters
-    if (request.From.HasValue)
-      query = query.Where(t => t.Date >= request.From.Value);
-    if (request.To.HasValue)
-      query = query.Where(t => t.Date <= request.To.Value);
+    query = query.Where(
+     t => t.UserId == GetUserId() &&
+     t.Date >= startDate &&
+     t.Date <= endDate &&
+     (!request.AccountId.HasValue || t.AccountId == request.AccountId.Value)
+   );
     // * Sorting
     query = request.OrderBy switch
     {

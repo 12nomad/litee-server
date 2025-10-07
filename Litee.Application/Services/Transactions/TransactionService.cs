@@ -13,17 +13,40 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
 {
   private readonly DatabaseContext _databaseContext = databaseContext;
   private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+  private const int DaysBeforeToday = 29; // * Today included * //
 
 
   public async Task<PaginatedServicesResult<List<Transaction>, EmptyMetadata>> GetTransactionsAsync(TransactionsPaginationAndFilteringRequest request)
   {
+    DateOnly startDate;
+    if (!string.IsNullOrWhiteSpace(request.From) && DateOnly.TryParseExact(request.From, "yyyy-MM-dd", out var parsed))
+      startDate = parsed;
+    else
+      startDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-DaysBeforeToday);
+
+    DateOnly endDate;
+    if (!string.IsNullOrWhiteSpace(request.To) && DateOnly.TryParseExact(request.To, "yyyy-MM-dd", out var anotherParse))
+      endDate = anotherParse;
+    else
+      endDate = DateOnly.FromDateTime(DateTime.Today);
+
+    if (startDate > endDate)
+      return new PaginatedServicesResult<List<Transaction>, EmptyMetadata>(false, HttpStatusCode.BadRequest, "Start date should not be greater than end date", null);
+
+
     var query = _databaseContext.Transactions
       .AsQueryable();
 
     // * Filter
-    query.Where(t => t.UserId == GetUserId());
-    if (!string.IsNullOrEmpty(request.Search))
-      query.Where(t => t.Description.ToLower().Contains(request.Search.Trim().ToLower()));
+    query = query.Where(
+      t => t.UserId == GetUserId() &&
+      t.Date >= startDate &&
+      t.Date <= endDate &&
+      (!request.AccountId.HasValue || t.AccountId == request.AccountId.Value) &&
+      (!request.CategoryId.HasValue || t.CategoryId == request.CategoryId.Value)
+    );
+    // if (!string.IsNullOrEmpty(request.Search))
+    //   query.Where(t => t.Description.ToLower().Contains(request.Search.Trim().ToLower()));
 
     // * Sort
     query = request.OrderBy switch
@@ -56,6 +79,7 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
            Id = t.Account.Id,
            Name = t.Account.Name
          }
+
        })
       .Skip((request.Page - 1) * request.PageSize)
       .Take(request.PageSize)

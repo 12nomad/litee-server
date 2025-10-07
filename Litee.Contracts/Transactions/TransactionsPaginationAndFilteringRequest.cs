@@ -4,8 +4,10 @@ namespace Litee.Contracts.Transactions;
 
 public class TransactionsPaginationAndFilteringRequest : PaginationRequest
 {
-  public DateOnly? From { get; set; }
-  public DateOnly? To { get; set; }
-  public string? Search { get; set; }
+  public string? From { get; set; }
+  public string? To { get; set; }
+  public int? CategoryId { get; set; }
+  public int? AccountId { get; set; }
+  // public string? Search { get; set; }
   public string? OrderBy { get; set; }
 }

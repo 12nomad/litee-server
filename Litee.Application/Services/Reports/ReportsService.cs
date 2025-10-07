@@ -142,7 +142,9 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
       ExpenseDifference = GetDifference(currentPeriodSummary?.Expense ?? 0, previousPeriodSummary?.Expense ?? 0),
       RemainDifference = GetDifference(currentPeriodSummary?.Remain ?? 0, previousPeriodSummary?.Remain ?? 0),
       CategoriesSummary = categoriesSummary,
-      DatesSummary = datesSummary
+      DatesSummary = datesSummary,
+      PreviousPeriodStart = previousPeriodStart,
+      PreviousPeriodEnd = previousPeriodEnd
     });
 
   }
@@ -157,6 +159,7 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
   public int GetDifference(int current, int previous)
   {
     if (previous == 0) return previous == current ? 0 : 100;
-    return (current - previous) / previous * 100;
+    return (int)(((double)(current - previous) / previous) * 100);
+
   }
 }

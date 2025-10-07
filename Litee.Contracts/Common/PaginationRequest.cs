@@ -2,9 +2,9 @@ namespace Litee.Contracts.Authentication.Common;
 
 public class PaginationRequest
 {
-  private const int MaxPageSize = 5;
+  private const int MaxPageSize = 10;
   public int Page { get; set; } = 1;
-  private int _pageSize = 5;
+  private int _pageSize;
   public int PageSize
   {
     get { return _pageSize; }

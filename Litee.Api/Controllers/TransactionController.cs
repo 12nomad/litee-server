@@ -13,7 +13,7 @@ public class TransactionController(ITransactionService _transactionService) : Co
 {
   [Authorize(Roles = "Admin, User")]
   [HttpGet(Routes.Transactions.GetAll)]
-  public async Task<ActionResult<PaginationResponse<List<Transaction>, EmptyMetadata>>> GetAccounts([FromQuery] TransactionsPaginationAndFilteringRequest request)
+  public async Task<ActionResult<PaginationResponse<List<Transaction>, EmptyMetadata>>> GetTransactions([FromQuery] TransactionsPaginationAndFilteringRequest request)
   {
     var result = await _transactionService.GetTransactionsAsync(request);
     return Ok(new PaginationResponse<List<Transaction>, EmptyMetadata>()

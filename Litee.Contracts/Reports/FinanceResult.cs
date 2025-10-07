@@ -14,6 +14,8 @@ public class FinanceResult : FinanceSummary
   public int IncomeDifference { get; set; }
   public int ExpenseDifference { get; set; }
   public int RemainDifference { get; set; }
+  public DateOnly PreviousPeriodStart { get; set; }
+  public DateOnly PreviousPeriodEnd { get; set; }
   public List<FinanceSummary>? CategoriesSummary { get; set; }
   public List<FinanceSummary>? DatesSummary { get; set; }
 }
