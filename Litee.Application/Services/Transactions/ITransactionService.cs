@@ -1,6 +1,7 @@
 using Litee.Contracts.Common;
 using Litee.Contracts.Transactions;
 using Litee.Domain.Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace Litee.Application.Services.Transactions;
 
@@ -13,4 +14,5 @@ public interface ITransactionService
   Task<ServicesResult<Transaction>> DeleteTransactionAsync(int id);
   Task<ServicesResult<List<Transaction>>> BulkDeleteAsync(BulkDeleteTransactionRequest request);
   Task<ServicesResult<List<Transaction>>> BulkCreateAsync(BulkCreateTransactionRequest request);
+  Task<ServicesResult<ScanReceiptResponse>> ScanReceiptAsync(IFormFile file);
 }

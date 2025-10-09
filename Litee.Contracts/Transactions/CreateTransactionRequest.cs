@@ -23,4 +23,6 @@ public class CreateTransactionRequest
 
   [Required]
   public int CategoryId { get; set; }
+
+  public int? ReceiptId { get; set; }
 }

@@ -20,4 +20,6 @@ public class Transaction
   public User User { get; set; } = null!;
   public int? CategoryId { get; set; }
   public Category? Category { get; set; }
+  public int? ReceiptId { get; set; }
+  public Receipt? Receipt { get; set; }
 }

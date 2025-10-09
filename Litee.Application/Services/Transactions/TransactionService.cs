@@ -1,19 +1,46 @@
 using System.Net;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using GenerativeAI;
+using GenerativeAI.Types;
 using Litee.Contracts.Common;
 using Litee.Contracts.Transactions;
 using Litee.Domain;
 using Litee.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Litee.Application.Services.Transactions;
 
-public class TransactionService(IHttpContextAccessor httpContextAccessor, DatabaseContext databaseContext) : ITransactionService
+public class TransactionService(IHttpContextAccessor httpContextAccessor, IConfiguration configuration, DatabaseContext databaseContext) : ITransactionService
 {
   private readonly DatabaseContext _databaseContext = databaseContext;
   private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
   private const int DaysBeforeToday = 29; // * Today included * //
+  private string _geminiApiKey = configuration["Api_Keys:Gemini"]
+                                   ?? throw new InvalidOperationException("API key not found.");
+  private const string Prompt = @"
+        Analyze the attached image. If it is a valid receipt, strictly extract the requested financial data.
+
+        1.  **Total amount:** Extract the grand total number.
+        2.  **Payee Name:** Extract the official name of the merchant or store.
+        3.  **Date:** Extract the transaction date in YYYY-MM-DD format.
+        4.  **Description:** Provide a concise summary (max 80 characters) of the items purchased or a brief description of the receipt content.
+
+        If the image is not a receipt or lacks essential data, return an empty JSON object: {}.
+
+        If the image is a receipt, follow this exact JSON format:
+        {
+          ""amount"": ""number"",
+          ""date"": ""YYYY-MM-DD date format as string"",
+          ""description"": ""string"",
+          ""payee"": ""string"",
+        }
+
+        If some data is ambiguous, return the value as empty string but keep the JSON structure as it is.
+      ";
 
 
   public async Task<PaginatedServicesResult<List<Transaction>, EmptyMetadata>> GetTransactionsAsync(TransactionsPaginationAndFilteringRequest request)
@@ -66,9 +93,10 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
          Amount = t.Amount,
          Payee = t.Payee,
          Date = t.Date,
-         AccountId = t.AccountId,
          UserId = t.UserId,
+         AccountId = t.AccountId,
          CategoryId = t.CategoryId,
+         ReceiptId = t.ReceiptId,
          Category = t.Category == null ? null : new Category
          {
            Id = t.Category.Id,
@@ -78,8 +106,12 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
          {
            Id = t.Account.Id,
            Name = t.Account.Name
+         },
+         Receipt = t.Receipt == null ? null : new Receipt
+         {
+           Id = t.Receipt.Id,
+           Base64Image = t.Receipt.Base64Image
          }
-
        })
       .Skip((request.Page - 1) * request.PageSize)
       .Take(request.PageSize)
@@ -112,6 +144,11 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
       UserId = userId ?? 0,
       CategoryId = request.CategoryId
     };
+
+    if (request.ReceiptId.HasValue)
+    {
+      newTransaction.ReceiptId = request.ReceiptId.Value;
+    }
 
     await _databaseContext.Transactions.AddAsync(newTransaction);
     await _databaseContext.SaveChangesAsync();
@@ -241,6 +278,65 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, Databa
     await _databaseContext.SaveChangesAsync();
 
     return new ServicesResult<Transaction>(true, null, "Transaction deleted successfully", null);
+  }
+
+  public async Task<ServicesResult<ScanReceiptResponse>> ScanReceiptAsync(IFormFile file)
+  {
+    if (file.Length > 5 * 1024 * 1024) // * 5MB limit
+      return new ServicesResult<ScanReceiptResponse>(false, HttpStatusCode.BadRequest, "Max image size is 5MB", null);
+
+    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+    if (!allowedExtensions.Contains(Path.GetExtension(file.FileName).ToLower()))
+      return new ServicesResult<ScanReceiptResponse>(false, HttpStatusCode.BadRequest, "Only .jpg, .jpeg, .png and .webp formats are supported", null);
+
+    try
+    {
+      var googleAI = new GoogleAi(_geminiApiKey);
+      var model = googleAI.CreateGenerativeModel("models/gemini-2.5-flash");
+
+      // * Generate buffer for the model
+      var memoryStream = new MemoryStream();
+      await file.CopyToAsync(memoryStream);
+      var buffer = memoryStream.ToArray();
+      var base64Image = Convert.ToBase64String(buffer);
+      var dataUri = $"data:{file.ContentType};base64,{base64Image}";
+
+      var request = new GenerateContentRequest();
+      request.AddText(Prompt);
+      request.AddInlineData(base64Image, file.ContentType);
+      var response = await model.GenerateContentAsync(request);
+      Console.WriteLine($"Response Text ================================== {response.Text()}");
+
+      if (response.Text() is null)
+        return new ServicesResult<ScanReceiptResponse>(false, HttpStatusCode.ExpectationFailed, "Receipt could not be parsed", null);
+
+      var match = GenAiTextRegex.JsonBlockRegex().Match(response.Text() ?? "");
+      if (!match.Success)
+        throw new Exception("No valid JSON block found");
+
+      var json = match.Groups[1].Value;
+      Console.WriteLine($"Json Value ================================== {json}");
+      var textResponse = JsonSerializer.Deserialize<ScanReceiptResponse>(json.Trim());
+
+      // * Saving the image to the database
+      var receipt = await _databaseContext.Receipts.AddAsync(new Receipt { Base64Image = dataUri });
+      await _databaseContext.SaveChangesAsync();
+
+      return new ServicesResult<ScanReceiptResponse>(true, null, "Receipt parsed successfully", new ScanReceiptResponse
+      {
+        Amount = textResponse?.Amount ?? "",
+        Date = textResponse?.Date ?? "",
+        Description = textResponse?.Description ?? "",
+        Payee = textResponse?.Payee ?? "",
+        Base64Image = dataUri ?? "",
+        ReceiptId = receipt.Entity.Id
+      });
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine($"Error Message ================================== {e.Message}");
+      return new ServicesResult<ScanReceiptResponse>(false, HttpStatusCode.ServiceUnavailable, e.Message, null);
+    }
   }
 
   // * helpers

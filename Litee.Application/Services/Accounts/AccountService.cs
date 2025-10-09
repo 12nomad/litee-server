@@ -80,10 +80,16 @@ public class AccountService(IHttpContextAccessor httpContextAccessor, DatabaseCo
       AccountId = t.AccountId,
       UserId = t.UserId,
       CategoryId = t.CategoryId,
+      ReceiptId = t.ReceiptId,
       Category = t.Category == null ? null : new Category
       {
         Id = t.Category.Id,
         Name = t.Category.Name
+      },
+      Receipt = t.Receipt == null ? null : new Receipt
+      {
+        Id = t.Receipt.Id,
+        Base64Image = t.Receipt.Base64Image
       }
     })
     .Skip((request.Page - 1) * request.PageSize)

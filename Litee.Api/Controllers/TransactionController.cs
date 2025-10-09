@@ -1,9 +1,11 @@
+using System.Net;
 using Litee.Application.Services.Transactions;
 using Litee.Contracts.Authentication.Common;
 using Litee.Contracts.Common;
 using Litee.Contracts.Transactions;
 using Litee.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Litee.Api.Controllers;
@@ -90,5 +92,22 @@ public class TransactionController(ITransactionService _transactionService) : Co
       return NotFound(result.Message);
 
     return Ok();
+  }
+
+  [Authorize(Roles = "Admin, User")]
+  [HttpPost(Routes.Transactions.ScanReceipt)]
+  public async Task<ActionResult<ScanReceiptResponse>> ScanReceipt([FromForm] IFormFile file)
+  {
+    var result = await _transactionService.ScanReceiptAsync(file);
+
+    if (!result.IsSuccess)
+    {
+      if (result.ErrorCode == HttpStatusCode.ExpectationFailed)
+        return StatusCode((int)HttpStatusCode.ExpectationFailed, result.Message);
+      else
+        return StatusCode((int)HttpStatusCode.ServiceUnavailable, result.Message);
+    }
+
+    return Ok(result.Data);
   }
 }

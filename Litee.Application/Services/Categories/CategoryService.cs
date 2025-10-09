@@ -78,10 +78,16 @@ public class CategoryService(IHttpContextAccessor httpContextAccessor, DatabaseC
       CategoryId = t.CategoryId,
       UserId = t.UserId,
       AccountId = t.AccountId,
+      ReceiptId = t.ReceiptId,
       Account = new Account
       {
         Id = t.Account.Id,
         Name = t.Account.Name
+      },
+      Receipt = t.Receipt == null ? null : new Receipt
+      {
+        Id = t.Receipt.Id,
+        Base64Image = t.Receipt.Base64Image
       }
     })
     .Skip((request.Page - 1) * request.PageSize)
