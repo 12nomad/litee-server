@@ -1,4 +1,5 @@
 using Litee.Api;
+using Litee.Api.Middlewares;
 using Litee.Application;
 using Litee.Domain;
 using Scalar.AspNetCore;
@@ -27,6 +28,10 @@ app.UseCors("CorsPolicy");
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
+// * Middleware
+app.UseMiddleware<ClearJwtOnUnauthorizedMiddleware>();
+// * Middleware
 
 app.UseAuthorization();
 
