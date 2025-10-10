@@ -110,4 +110,23 @@ public class TransactionController(ITransactionService _transactionService) : Co
 
     return Ok(result.Data);
   }
+
+  [Authorize(Roles = "Admin, User")]
+  [HttpGet(Routes.Transactions.GetInsight)]
+  public async Task<ActionResult<GenAiInsightTextResponse>> GetInsight([FromQuery] GetInsightRequest request)
+  {
+    var result = await _transactionService.GetInsightAsync(request);
+
+    if (!result.IsSuccess)
+    {
+      if (result.ErrorCode == HttpStatusCode.ExpectationFailed)
+        return StatusCode((int)HttpStatusCode.ExpectationFailed, result.Message);
+      if (result.ErrorCode == HttpStatusCode.BadRequest)
+        return BadRequest(result.Message);
+      else
+        return StatusCode((int)HttpStatusCode.ServiceUnavailable, result.Message);
+    }
+
+    return Ok(result.Data);
+  }
 }

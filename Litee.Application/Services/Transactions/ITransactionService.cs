@@ -15,4 +15,5 @@ public interface ITransactionService
   Task<ServicesResult<List<Transaction>>> BulkDeleteAsync(BulkDeleteTransactionRequest request);
   Task<ServicesResult<List<Transaction>>> BulkCreateAsync(BulkCreateTransactionRequest request);
   Task<ServicesResult<ScanReceiptResponse>> ScanReceiptAsync(IFormFile file);
+  Task<ServicesResult<GenAiInsightTextResponse>> GetInsightAsync(GetInsightRequest request);
 }

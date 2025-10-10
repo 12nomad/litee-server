@@ -1,9 +1,10 @@
 using System.Net;
 using System.Security.Claims;
+using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using GenerativeAI;
 using GenerativeAI.Types;
+using Litee.Application.Helpers;
 using Litee.Contracts.Common;
 using Litee.Contracts.Transactions;
 using Litee.Domain;
@@ -21,43 +22,12 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, IConfi
   private const int DaysBeforeToday = 29; // * Today included * //
   private string _geminiApiKey = configuration["Api_Keys:Gemini"]
                                    ?? throw new InvalidOperationException("API key not found.");
-  private const string Prompt = @"
-        Analyze the attached image. If it is a valid receipt, strictly extract the requested financial data.
-
-        1.  **Total amount:** Extract the grand total number.
-        2.  **Payee Name:** Extract the official name of the merchant or store.
-        3.  **Date:** Extract the transaction date in YYYY-MM-DD format.
-        4.  **Description:** Provide a concise summary (max 80 characters) of the items purchased or a brief description of the receipt content.
-
-        If the image is not a receipt or lacks essential data, return an empty JSON object: {}.
-
-        If the image is a receipt, follow this exact JSON format:
-        {
-          ""amount"": ""number"",
-          ""date"": ""YYYY-MM-DD date format as string"",
-          ""description"": ""string"",
-          ""payee"": ""string"",
-        }
-
-        If some data is ambiguous, return the value as empty string but keep the JSON structure as it is.
-      ";
-
 
   public async Task<PaginatedServicesResult<List<Transaction>, EmptyMetadata>> GetTransactionsAsync(TransactionsPaginationAndFilteringRequest request)
   {
-    DateOnly startDate;
-    if (!string.IsNullOrWhiteSpace(request.From) && DateOnly.TryParseExact(request.From, "yyyy-MM-dd", out var parsed))
-      startDate = parsed;
-    else
-      startDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-DaysBeforeToday);
+    var dateRange = Utils.GetDateRange(request.From, request.To, DaysBeforeToday);
 
-    DateOnly endDate;
-    if (!string.IsNullOrWhiteSpace(request.To) && DateOnly.TryParseExact(request.To, "yyyy-MM-dd", out var anotherParse))
-      endDate = anotherParse;
-    else
-      endDate = DateOnly.FromDateTime(DateTime.Today);
-
-    if (startDate > endDate)
+    if (dateRange.StartDate > dateRange.EndDate)
       return new PaginatedServicesResult<List<Transaction>, EmptyMetadata>(false, HttpStatusCode.BadRequest, "Start date should not be greater than end date", null);
 
 
@@ -67,8 +37,8 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, IConfi
     // * Filter
     query = query.Where(
       t => t.UserId == GetUserId() &&
-      t.Date >= startDate &&
-      t.Date <= endDate &&
+      t.Date >= dateRange.StartDate &&
+      t.Date <= dateRange.EndDate &&
       (!request.AccountId.HasValue || t.AccountId == request.AccountId.Value) &&
       (!request.CategoryId.HasValue || t.CategoryId == request.CategoryId.Value)
     );
@@ -302,10 +272,28 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, IConfi
       var dataUri = $"data:{file.ContentType};base64,{base64Image}";
 
       var request = new GenerateContentRequest();
-      request.AddText(Prompt);
+      string ReceiptScanPrompt = $@"
+        Analyze the attached image. If it is a valid receipt, strictly extract the requested financial data.
+
+        1.  **Total amount:** Extract the grand total number.
+        2.  **Payee Name:** Extract the official name of the merchant or store.
+        3.  **Date:** Extract the transaction date in YYYY-MM-DD format.
+        4.  **Description:** Provide a concise summary (max 80 characters) of the items purchased or a brief description of the receipt content.
+
+        If the image is not a receipt or lacks essential data, return an empty JSON object: {{}}.
+
+        If the image is a receipt, follow this exact JSON format:
+        {{
+          ""amount"": ""number"",
+          ""date"": ""YYYY-MM-DD date format as string"",
+          ""description"": ""string"",
+          ""payee"": ""string"",
+        }}
+        If some data is ambiguous, return the value as empty string but keep the JSON structure as it is.
+      ";
+      request.AddText(ReceiptScanPrompt);
       request.AddInlineData(base64Image, file.ContentType);
       var response = await model.GenerateContentAsync(request);
-      Console.WriteLine($"Response Text ================================== {response.Text()}");
 
       if (response.Text() is null)
         return new ServicesResult<ScanReceiptResponse>(false, HttpStatusCode.ExpectationFailed, "Receipt could not be parsed", null);
@@ -315,7 +303,6 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, IConfi
         throw new Exception("No valid JSON block found");
 
       var json = match.Groups[1].Value;
-      Console.WriteLine($"Json Value ================================== {json}");
       var textResponse = JsonSerializer.Deserialize<ScanReceiptResponse>(json.Trim());
 
       // * Saving the image to the database
@@ -334,10 +321,101 @@ public class TransactionService(IHttpContextAccessor httpContextAccessor, IConfi
     }
     catch (Exception e)
     {
-      Console.WriteLine($"Error Message ================================== {e.Message}");
       return new ServicesResult<ScanReceiptResponse>(false, HttpStatusCode.ServiceUnavailable, e.Message, null);
     }
   }
+
+  public async Task<ServicesResult<GenAiInsightTextResponse>> GetInsightAsync(GetInsightRequest request)
+  {
+    const int InsightDaysBeforeToday = 6;
+    var dateRange = Utils.GetDateRange(request.From, request.To, InsightDaysBeforeToday);
+    var query = _databaseContext.Transactions
+      .AsQueryable();
+
+    // * Filter
+    query = query.Where(
+      t => t.UserId == GetUserId() &&
+      t.Date >= dateRange.StartDate &&
+      t.Date <= dateRange.EndDate &&
+      (!request.AccountId.HasValue || t.AccountId == request.AccountId.Value) &&
+      (!request.CategoryId.HasValue || t.CategoryId == request.CategoryId.Value)
+    );
+
+    // * Map
+    query = query.OrderByDescending(t => t.Date);
+    var transactions = await query
+       .Select(t => new GenAiInsightSeed
+       {
+         Description = t.Description,
+         Amount = t.Amount / 1000, // * Convert to K
+         Payee = t.Payee,
+         Date = t.Date,
+         Account = t.Account.Name,
+         Category = t.Category != null ? t.Category.Name : "Uncathegorized"
+       })
+      .ToListAsync();
+
+    if (transactions.Count < 10)
+      return new ServicesResult<GenAiInsightTextResponse>(false, HttpStatusCode.BadRequest, "Not enough transactions to generate insight. Provide at least 10 transactions or more inside the date range", null);
+
+    string seed = JsonSerializer.Serialize(transactions, new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+    string InsightPrompt = $@"
+        You are a highly analytical, non-judgemental Personal Financial Advisor AI.
+        Your task is to analyze the provided raw transaction data for a single user and generate a comprehensive financial insight report.
+
+        **CRITICAL DATA INSTRUCTION:**
+        * **Transaction Type:** An 'Amount' that is **positive** represents **Income**. An 'Amount' that is **negative** represents an **Expense**.
+        * **Amount Currency** For each an every 'Amount' the currency is in Euro so use the Euro sign € to indicate the currency.
+        * **Character Limit:** For each insight characters should be at around 400 characters or less **.
+
+        RULES:
+        1.  **Analyze Holistically:** Consider dates, categories, payees, and accounts to find meaningful trends and risks, *using the calculated true amount*.
+        2.  **Actuarial Advice:** Provide meaningful, strategic, and actionable advice.
+        3.  **Strict JSON Format:** Your entire response must be a single, valid JSON object following the provided schema, with insights populated for every section.
+        4.  **Data Structure:** The input data is an array of Transaction objects, each including its associated Account and Category names.
+
+        --- TRANSACTION DATA TO ANALYZE ---
+        {seed} 
+        --- END DATA ---
+
+        For the ouput of your analytics, provide a JSON object with the following structure:
+        {{
+          ""spendingHabitsSummary"": ""string"",
+          ""budgetaryAlertsAndRisks"": ""string"",
+          ""incomeAndSavingsPotential"": ""string"",
+          ""accountHealthAndCashFlow"": ""string"",
+          ""strategicRecommendations"": ""string""
+        }}
+
+        Generate the financial insight report now.
+      ";
+
+    try
+    {
+      var googleAI = new GoogleAi(_geminiApiKey);
+      var model = googleAI.CreateGenerativeModel("models/gemini-2.5-flash");
+      var contentRequest = new GenerateContentRequest();
+      contentRequest.AddText(InsightPrompt);
+      var response = await model.GenerateContentAsync(contentRequest);
+
+      if (response.Text() is null)
+        return new ServicesResult<GenAiInsightTextResponse>(false, HttpStatusCode.ExpectationFailed, "Unable to generate insight", null);
+
+      var match = GenAiTextRegex.JsonBlockRegex().Match(response.Text() ?? "");
+      if (!match.Success)
+        throw new Exception("No valid JSON block found");
+
+      var json = match.Groups[1].Value;
+      var textResponse = JsonSerializer.Deserialize<GenAiInsightTextResponse>(json.Trim());
+
+      return new ServicesResult<GenAiInsightTextResponse>(true, null, "Insight generated successfully", textResponse);
+    }
+    catch (Exception e)
+    {
+      return new ServicesResult<GenAiInsightTextResponse>(false, HttpStatusCode.ServiceUnavailable, e.Message, null);
+    }
+  }
+
 
   // * helpers
   public int? GetUserId()

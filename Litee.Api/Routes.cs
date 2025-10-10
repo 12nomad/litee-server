@@ -37,6 +37,7 @@ public class Routes
     public const string BulkDelete = TransactionsBasePath + "/bulk-delete";
     public const string BulkCreate = TransactionsBasePath + "/bulk-create";
     public const string ScanReceipt = TransactionsBasePath + "/scan-receipt";
+    public const string GetInsight = TransactionsBasePath + "/get-insight";
 
   }
 
