@@ -159,7 +159,8 @@ public class ReportsService(IHttpContextAccessor httpContextAccessor, DatabaseCo
   public int GetDifference(int current, int previous)
   {
     if (previous == 0) return previous == current ? 0 : 100;
-    return (int)(((double)(current - previous) / previous) * 100);
 
+    var percent = (int)(((double)(current - previous) / previous) * 100);
+    return Math.Max(-100, Math.Min(100, percent));
   }
 }
