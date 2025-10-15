@@ -9,6 +9,8 @@ using Litee.Contracts.Authentication.SignUp;
 using Litee.Contracts.Common;
 using Litee.Domain;
 using Litee.Domain.Entities;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -96,7 +98,7 @@ public class AuthenticationService(IConfiguration configuration, DatabaseContext
 
   public void SetCookieToken(string token, HttpContext httpContext)
   {
-    // ! FIXME: Change this when deploying
+    // ! FIXME: fix on deploy
     httpContext.Response.Cookies.Append("access_token", token, new CookieOptions
     {
       HttpOnly = true,
@@ -110,5 +112,35 @@ public class AuthenticationService(IConfiguration configuration, DatabaseContext
   public void ClearCookieToken(HttpContext httpContext)
   {
     httpContext.Response.Cookies.Delete("access_token");
+  }
+
+  public async Task<ServicesResult<string>> SignInGoogleCallbackAsync(ClaimsPrincipal claimsPrincipal)
+  {
+    var email = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+    var name = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+    if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(name))
+      return new ServicesResult<string>(false, HttpStatusCode.BadRequest, "Invalid credentials", null);
+
+    // * Find or create user in database
+    var user = await _dbContext.Users
+      .FirstOrDefaultAsync(user => user.Email == email);
+    if (user is null)
+    {
+      var newUser = new User()
+      {
+        Email = email,
+        Username = name,
+        Role = Enum.GetName<UserRole>(UserRole.User)!,
+        PasswordHash = "GOOGLE_OAUTH"
+      };
+      await _dbContext.Users.AddAsync(newUser);
+      await _dbContext.SaveChangesAsync();
+      var newUserToken = GenerateJwtToken(newUser);
+      return new ServicesResult<string>(true, null, null, newUserToken);
+    }
+
+    var userToken = GenerateJwtToken(user);
+    return new ServicesResult<string>(true, null, null, userToken);
   }
 }

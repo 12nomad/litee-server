@@ -1,9 +1,11 @@
+using System.Security.Claims;
 using Litee.Contracts.Authentication.Common;
 using Litee.Contracts.Authentication.SignIn;
 using Litee.Contracts.Authentication.SignUp;
 using Litee.Contracts.Common;
 using Litee.Domain.Entities;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 
 namespace Litee.Application.Services.Authentication;
 
@@ -15,4 +17,5 @@ public interface IAuthenticationService
   public string GenerateJwtToken(User user);
   public void SetCookieToken(string token, HttpContext httpContext);
   public void ClearCookieToken(HttpContext httpContext);
+  public Task<ServicesResult<string>> SignInGoogleCallbackAsync(ClaimsPrincipal claimsPrincipal);
 }
