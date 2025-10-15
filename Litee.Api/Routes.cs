@@ -10,6 +10,8 @@ public class Routes
 
     public const string SignUp = AuthenticationBasePath + "/sign-up";
     public const string SignIn = AuthenticationBasePath + "/sign-in";
+    public const string SignInGoogle = AuthenticationBasePath + "/sign-in/google";
+    public const string SignInGoogleCallback = AuthenticationBasePath + "/sign-in/google/callback";
     public const string GetAuthenticatedUser = AuthenticationBasePath + "/authenticated-user";
     public const string Logout = AuthenticationBasePath + "/logout";
   }

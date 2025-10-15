@@ -1,17 +1,26 @@
+using System.Net;
 using System.Security.Claims;
 using Litee.Application.Services.Authentication;
 using Litee.Contracts.Authentication.Common;
 using Litee.Contracts.Authentication.SignIn;
 using Litee.Contracts.Authentication.SignUp;
+using Litee.Domain.Entities;
+using Microsoft.AspNetCore.Authentication;
+
+
+// using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Litee.Api.Controllers;
 
 [ApiController]
-public class AuthenticationController(IAuthenticationService authenticationService) : ControllerBase
+public class AuthenticationController(Application.Services.Authentication.IAuthenticationService authenticationService, IConfiguration configuration) : ControllerBase
 {
-    private readonly IAuthenticationService _authenticationService = authenticationService;
+    private readonly Application.Services.Authentication.IAuthenticationService _authenticationService = authenticationService;
+    private readonly IConfiguration _configuration = configuration;
 
     [Authorize(Roles = "Admin, User")]
     [HttpGet(Routes.Authentication.GetAuthenticatedUser)]
@@ -64,11 +73,22 @@ public class AuthenticationController(IAuthenticationService authenticationServi
         return Ok();
     }
 
-    [Authorize]
+    [Authorize(Roles = "Admin, User")]
     [HttpPost(Routes.Authentication.Logout)]
     public IActionResult Logout()
     {
         _authenticationService.ClearCookieToken(HttpContext);
         return Ok();
+    }
+
+    // * Google sign in
+    [HttpGet(Routes.Authentication.SignInGoogle)]
+    public IActionResult SignInGoogle()
+    {
+        var redirectUrl = _configuration["Urls:RedirectUrl"]
+                                  ?? throw new InvalidOperationException("RedirectUrl not found.");
+        var properties = new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = redirectUrl };
+
+        return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 }
