@@ -7,6 +7,7 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
+// Services
 builder.Services.AddCustomCors();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

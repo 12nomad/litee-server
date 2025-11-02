@@ -1,9 +1,6 @@
-using System.Net;
-using System.Security.Claims;
 using System.Text;
 using Litee.Application.Services.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -15,6 +12,7 @@ public static class CollectionExtensions
   {
     services.AddCors(options =>
     {
+      // ! FIXME: fix on deploy
       options.AddPolicy("CorsPolicy",
         builder => builder
           .WithOrigins("http://localhost:3000")

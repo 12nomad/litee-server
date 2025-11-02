@@ -1,17 +1,12 @@
-using System.Net;
 using System.Security.Claims;
-using Litee.Application.Services.Authentication;
 using Litee.Contracts.Authentication.Common;
 using Litee.Contracts.Authentication.SignIn;
 using Litee.Contracts.Authentication.SignUp;
-using Litee.Domain.Entities;
-using Microsoft.AspNetCore.Authentication;
 
 
 // using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Litee.Api.Controllers;

@@ -9,8 +9,6 @@ using Litee.Contracts.Authentication.SignUp;
 using Litee.Contracts.Common;
 using Litee.Domain;
 using Litee.Domain.Entities;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

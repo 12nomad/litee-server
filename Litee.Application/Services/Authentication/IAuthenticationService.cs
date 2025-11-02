@@ -5,7 +5,6 @@ using Litee.Contracts.Authentication.SignUp;
 using Litee.Contracts.Common;
 using Litee.Domain.Entities;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 
 namespace Litee.Application.Services.Authentication;
 
