@@ -15,11 +15,7 @@ Personnal finance management tool following .Net clean architecture principle
 - CSV Upload
 - Transaction Reports
 - Search, filtering with pagination
-
-## ✨ Upcoming Features
-
 - AI powered receipt parser
 - AI smart report analysis and summarization
-
 
 # ❗Litee Client (nextjs client 👉 [Litee Client](https://github.com/12nomad/litee-client)) 
